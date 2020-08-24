@@ -1,0 +1,31 @@
+&uart1 {
+  compatible = "nordic,nrf-uarte";
+  status = "okay";
+  current-speed = <115200>;
+	tx-pin = <13>;
+	rx-pin = <15>;
+
+  esp8266 {
+    compatible = "espressif,esp";
+    label = "esp8266";
+    status = "okay";
+  };
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <115200>;
+	tx-pin = <20>;
+	rx-pin = <24>;
+	rts-pin = <17>;
+	cts-pin = <22>;
+};
+
+&pwm0 {
+	status = "okay";
+	ch0-pin = <8>;
+	ch1-pin = <41>;
+	ch2-pin = <12>;
+	//ch0-inverted;
+};
