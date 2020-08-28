@@ -22,6 +22,23 @@
 	cts-pin = <22>;
 };
 
+&i2c1 {
+  compatible = "nordic,nrf-twi";
+  status = "okay";
+	sda-pin = <9>;
+	scl-pin = <10>;
+
+	bme280@76 {
+		compatible = "bosch,bme280";
+		reg = <0x76>;
+		label = "BME280";
+	};
+};
+
+&spi1 {
+  status = "disabled";
+};
+
 &pwm0 {
 	status = "okay";
 	ch0-pin = <8>;
