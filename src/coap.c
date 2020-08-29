@@ -66,6 +66,7 @@ int coap_connect(const char *server_addr, int port)
   if (ret < 0)
   {
     LOG_ERR("Cannot connect to UDP remote : %d", errno);
+    (void)close(sock);
     return -errno;
   }
 
@@ -74,7 +75,7 @@ int coap_connect(const char *server_addr, int port)
   return ret;
 }
 
-int send_coap_request(u8_t method, u8_t *path, u8_t *payload, u16_t payload_len)
+int send_coap_request(u8_t method, u8_t *path, coap_format_t format_num, u8_t *payload, u16_t payload_len)
 {
   struct coap_packet request;
   u8_t *data;
@@ -104,6 +105,14 @@ int send_coap_request(u8_t method, u8_t *path, u8_t *payload, u16_t payload_len)
     goto end;
   }
 
+  u8_t format[1] = {format_num};
+  r = coap_packet_append_option(&request, COAP_OPTION_CONTENT_FORMAT, format, 1);
+  if (r < 0)
+  {
+    LOG_ERR("Unable add option to request");
+    goto end;
+  }
+
   switch (method)
   {
   case COAP_METHOD_GET:
@@ -119,6 +128,7 @@ int send_coap_request(u8_t method, u8_t *path, u8_t *payload, u16_t payload_len)
       goto end;
     }
 
+    // LOG_INF("Appending payload with len %d - %s", payload_len, log_strdup(payload));
     r = coap_packet_append_payload(&request, (u8_t *)payload,
                                    payload_len);
     if (r < 0)
@@ -224,10 +234,10 @@ void coap_disconnect()
   sock = -1;
 }
 
-int coap_send(u8_t method, u8_t *path, u8_t *payload, u16_t payload_len)
+int coap_send(u8_t method, u8_t *path, coap_format_t format_num, u8_t *payload, u16_t payload_len)
 {
   int r;
-  r = send_coap_request(method, path, payload, payload_len);
+  r = send_coap_request(method, path, format_num, payload, payload_len);
   if (r < 0)
   {
     goto end;

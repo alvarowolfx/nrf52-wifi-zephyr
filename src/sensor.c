@@ -35,13 +35,13 @@ void sensor_task(void)
   struct device *dev = device_get_binding(BME280_LABEL);
   if (dev == NULL)
   {
-    printk("No device \"%s\" found; did initialization fail?\n",
-           BME280_LABEL);
+    LOG_ERR("No device \"%s\" found; did initialization fail?",
+            BME280_LABEL);
     return;
   }
   else
   {
-    printk("Found device \"%s\"\n", BME280_LABEL);
+    LOG_INF("Found device \"%s\"", BME280_LABEL);
   }
 
   while (1)

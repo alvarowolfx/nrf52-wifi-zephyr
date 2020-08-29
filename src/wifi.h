@@ -17,6 +17,7 @@
 
 void wifi_init();
 void wifi_connect();
+void wifi_disconnect();
 bool wifi_is_connected();
 bool wifi_is_connecting();
 

@@ -62,6 +62,15 @@ void wifi_connect()
   connecting = true;
 }
 
+void wifi_disconnect()
+{
+  // Try to restart ?
+  struct net_if *iface = net_if_get_default();
+  net_mgmt(NET_REQUEST_WIFI_DISCONNECT, iface, NULL, 0);
+  connected = false;
+  connecting = false;
+}
+
 bool wifi_is_connected()
 {
   return connected;
@@ -102,10 +111,10 @@ void wifi_task(void)
 
   while (1)
   {
-    LOG_INF("Checking Wifi status : %s", connected ? "ONLINE" : "OFFLINE");
+    LOG_INF("WiFi status : %s", connected ? "ONLINE" : "OFFLINE");
     if (connecting)
     {
-      LOG_INF("Trying to connect");
+      LOG_INF("Waiting to connect - %d", tries);
       tries++;
       if (tries > 10)
       {
@@ -119,6 +128,7 @@ void wifi_task(void)
 
     if (!connected && !connecting)
     {
+      LOG_INF("Trying to connect");
       wifi_connect();
     }
 
