@@ -98,15 +98,26 @@ void wifi_init()
 void wifi_task(void)
 {
   //struct net_if *iface = net_if_get_default();
+  int tries = 0;
 
   while (1)
   {
-    bool connected = wifi_is_connected();
     LOG_INF("Checking Wifi status : %s", connected ? "ONLINE" : "OFFLINE");
+    if (connecting)
+    {
+      LOG_INF("Trying to connect");
+      tries++;
+      if (tries > 10)
+      {
+        tries = 0;
+        connecting = false;
+        connected = false;
+      }
+    }
     //bool net_interface_connected = net_if_is_up(iface);
     //LOG_INF("Checking Net status : %s", net_interface_connected ? "ONLINE" : "OFFLINE");
 
-    if (!connected && !wifi_is_connecting())
+    if (!connected && !connecting)
     {
       wifi_connect();
     }

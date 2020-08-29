@@ -51,11 +51,11 @@ void sensor_task(void)
     sensor_channel_get(dev, SENSOR_CHAN_PRESS, &press);
     sensor_channel_get(dev, SENSOR_CHAN_HUMIDITY, &humidity);
 
-    LOG_INF("temp: %d.%06d; press: %d.%06d; humidity: %d.%06d",
+    LOG_DBG("temp: %d.%06d; press: %d.%06d; humidity: %d.%06d",
             temp.val1, temp.val2, press.val1, press.val2,
             humidity.val1, humidity.val2);
 
-    k_sleep(K_MSEC(1000));
+    k_sleep(K_MSEC(300));
   }
 }
 

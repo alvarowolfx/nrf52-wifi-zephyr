@@ -39,10 +39,12 @@ void main(void)
     {
       if (!coap_is_connected())
       {
+        LOG_INF("CoAP not connected, trying to connect.");
         coap_connect(SERVER_ADDR, PEER_PORT);
       }
-      else
+      if (coap_is_connected())
       {
+        LOG_INF("CoAP connected, trying to send data.");
         /*cbor_encoder_writer *writer;
         CborEncoder encoder, mapEncoder;
         cbor_encoder_init(&encoder, writer, 0);
@@ -62,6 +64,10 @@ void main(void)
         coap_send(COAP_METHOD_POST, "/state/temp", temp_buf, 9);
         coap_send(COAP_METHOD_POST, "/state/pressure", press_buf, 9);
       }
+    }
+    else
+    {
+      LOG_INF("Not connected");
     }
     k_sleep(K_SECONDS(1));
   }

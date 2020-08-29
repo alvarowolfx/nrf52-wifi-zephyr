@@ -3,24 +3,45 @@
 LOG_MODULE_REGISTER(coap);
 
 /* CoAP socket fd */
-int sock = -1;
-struct pollfd fds[1];
-int nfds;
+int sock;
+#define MAX_FDS 2
+struct pollfd fds[MAX_FDS];
+int nfds = 0;
 //const char *const path[] = {"/state", NULL};
 
-void prepare_fds(void)
+int add_fds(void)
 {
-  fds[nfds].fd = sock;
-  fds[nfds].events = POLLIN;
-  nfds++;
+  if (nfds < MAX_FDS)
+  {
+    fds[nfds].fd = sock;
+    fds[nfds].events = POLLIN;
+    nfds++;
+    return 0;
+  }
+  else
+  {
+    for (int i = 0; i < MAX_FDS; i++)
+    {
+      if (fds[i].fd < 0)
+      {
+        fds[i].fd = sock;
+        fds[i].events = POLLIN;
+        return 0;
+      }
+    }
+  }
+  return -1;
 }
 
-void wait(void)
+int wait(void)
 {
-  if (poll(fds, nfds, -1) < 0)
+  int ret;
+  ret = poll(fds, nfds, 1000);
+  if (ret < 0)
   {
     LOG_ERR("Error in poll:%d", errno);
   }
+  return ret;
 }
 
 int coap_connect(const char *server_addr, int port)
@@ -33,8 +54,6 @@ int coap_connect(const char *server_addr, int port)
 
   inet_pton(AF_INET, server_addr,
             &addr.sin_addr);
-
-  LOG_INF("CREATING UDP SOCK");
 
   sock = socket(addr.sin_family, SOCK_DGRAM, IPPROTO_UDP);
   if (sock < 0)
@@ -50,9 +69,9 @@ int coap_connect(const char *server_addr, int port)
     return -errno;
   }
 
-  prepare_fds();
+  ret = add_fds();
 
-  return 0;
+  return ret;
 }
 
 int send_coap_request(u8_t method, u8_t *path, u8_t *payload, u16_t payload_len)
@@ -64,6 +83,7 @@ int send_coap_request(u8_t method, u8_t *path, u8_t *payload, u16_t payload_len)
   data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
   if (!data)
   {
+    LOG_ERR("No memory to alloc coap msg");
     return -ENOMEM;
   }
 
@@ -115,11 +135,15 @@ int send_coap_request(u8_t method, u8_t *path, u8_t *payload, u16_t payload_len)
 
   //net_hexdump("Request", request.data, request.offset);
   r = send(sock, request.data, request.offset, 0);
+  if (r < 0)
+  {
+    LOG_ERR("Not able to send data");
+  }
 
 end:
   k_free(data);
 
-  return 0;
+  return r;
 }
 
 int process_coap_reply(void)
@@ -129,7 +153,11 @@ int process_coap_reply(void)
   int rcvd;
   int ret;
 
-  wait();
+  ret = wait();
+  if (ret < 0)
+  {
+    return ret;
+  }
 
   data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
   if (!data)
@@ -147,15 +175,7 @@ int process_coap_reply(void)
 
   if (rcvd < 0)
   {
-    if (errno == EAGAIN || errno == EWOULDBLOCK)
-    {
-      ret = 0;
-    }
-    else
-    {
-      ret = -errno;
-    }
-
+    ret = -errno;
     goto end;
   }
 
@@ -193,6 +213,13 @@ bool coap_is_connected()
 
 void coap_disconnect()
 {
+  for (int i = 0; i < MAX_FDS; i++)
+  {
+    if (fds[i].fd == sock)
+    {
+      fds[i].fd = -1;
+    }
+  }
   (void)close(sock);
   sock = -1;
 }
@@ -213,6 +240,7 @@ int coap_send(u8_t method, u8_t *path, u8_t *payload, u16_t payload_len)
   }
 
   LOG_INF("Sent CoAP request sucessfully");
+
 end:
   if (r < 0)
   {
